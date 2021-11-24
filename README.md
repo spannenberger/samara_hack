@@ -8,6 +8,7 @@ Preparation for samara hackathon
 ## План 
 1. Поресерчим датасеты с животными/видосами: 
     - https://cvwc2019.github.io/challenge.html 
+    - https://github.com/ElegantLin/CVWC-2019/tree/master/detection
 3. Закинуть в репу обработку видео-потока 
 4. Подумать как мы можем выводить результаты обработки входного видоса:
     - Видосы лежат на локалка или в бд
