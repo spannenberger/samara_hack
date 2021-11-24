@@ -66,7 +66,6 @@ def main():
                     "category_id": cat_id,
                 }
             )
-            # print(annotations)
             annot_id += 1
         img_id += 1
 
