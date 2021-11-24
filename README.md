@@ -1,18 +1,11 @@
-# samara_hack
-Preparation for samara hackathon
-Задача:
-- На вход получаем видос с камер
-- Детектим животных
-- Классифицируем - тигр (желательно находить принцесску) или леопард 
+## Перевод в формат COCO 
+In this example will be used dataset from [Kaggle - Fruit Detection](https://www.kaggle.com/andrewmvd/fruit-detection).
 
-## План 
-1. Поресерчим датасеты с животными/видосами: 
-    - https://cvwc2019.github.io/challenge.html 
-3. Закинуть в репу обработку видео-потока 
-4. Подумать как мы можем выводить результаты обработки входного видоса:
-    - Видосы лежат на локалка или в бд
-    - Создаем flask app:
-      - Прикрутить тг бота, который будет пинговать при нахождении тигра/леопарда (фотка с задетекченым животным)
-      - На фронт выводим видос с онлайн детекцией, если нашли животное:
-        - пингуем в тг
-        - Отрисовываем контур + классификация с принтом найденного класса животного 
+To convert it to COCO you need to use `to_coco.py` script. This script requires additional package - [`xmltodict`](https://pypi.org/project/xmltodict/).
+
+
+Usage is simple:
+
+```bash
+python3 to_coco.py <images directory> <annotations directory> <output json file>
+```
