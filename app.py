@@ -2,6 +2,7 @@ from flask import Flask, flash, request, redirect, url_for, render_template
 import urllib.request
 import os
 from werkzeug.utils import secure_filename
+from utils import transform_image
 
 app = Flask(__name__)
 
@@ -29,14 +30,21 @@ def upload_image():
         flash('No file part')
         return redirect(request.url)
     file = request.files['file']
+    # print(file)
+    # Если не загрузили фотку фолим 
     if file.filename == '':
         flash('No image selected for uploading')
         return redirect(request.url)
+
+    # Если загружена норм фотка 
     if file and allowed_file(file.filename):
         filename = secure_filename(file.filename)
         file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
         # print('upload_image filename: ' + filename)
         flash('Image successfully uploaded and displayed below')
+        # img_bytes = file.read()
+        # image = transform_image(img_bytes)
+        # print(image)
         return render_template('index.html', filename=filename)
     else:
         flash('Allowed image types are - png, jpg, jpeg, gif')

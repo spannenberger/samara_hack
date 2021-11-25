@@ -1,0 +1,24 @@
+version: '2.3'
+
+services:
+  cv:
+    image: cv
+    # runtime: nvidia
+    # pid: "host"
+    # env_file:
+    #   - .env
+    ports:
+      - 5000:5000
+      - 6006:6006
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/workspace/cv
+    build:
+      context: .
+      network: host
+      dockerfile: ./Dockerfile
+      
+
+volumes:
+  cv:
