@@ -33,9 +33,7 @@ def process_image(image_bytes):
 
 
 def transform_pil_image_to_bytes(image):
-    print(image.shape)
     image = Image.fromarray(image)
-    print(image)
     buffer = io.BytesIO()
     image.save(buffer, 'PNG')
     buffer.seek(0)
@@ -65,13 +63,15 @@ def bot_image_processing(bot, update):
     image_array = process_image(image_bytes)
     _, img_encoded = cv2.imencode('.jpg', image_array)
     response = requests.post(URL, data=img_encoded.tostring(), headers=headers)
-    metadata = json.loads(response.text)['image']
-    breakpoint()
+    metadata = response.json()['image']
+    for bbox in metadata['bbox']:
+        cv2.rectangle(image_array, (bbox['bbox']['x1'], bbox['bbox']['y1']),\
+                      (bbox['bbox']['x2'], bbox['bbox']['y2']), (255, 0, 0), 3)
     image = transform_pil_image_to_bytes(image_array)
 
 
     bot.send_photo(chat_id=update.message.chat_id, photo=image)
-    bot.send_message(chat_id=update.message.chat_id, text='Фото обработано',
+    bot.send_message(chat_id=update.message.chat_id, text=metadata,
                      reply_to_message_id=update.message.message_id,
                      parse_mode=telegram.ParseMode.HTML)
 
