@@ -1,2 +1,7 @@
 mmcv-full>=1.2.4
 torchvision
+Flask==2.0.2
+opencv-python==4.5.4.60
+requests==2.26.0
+python-telegram-bot==12.1.1
+jsonpickle==2.0.0
