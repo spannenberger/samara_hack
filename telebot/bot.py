@@ -1,5 +1,4 @@
 import io
-
 import telegram
 from PIL import Image
 from telegram.ext import CommandHandler
@@ -7,11 +6,9 @@ from telegram.ext import MessageHandler, Filters
 from telegram.ext import Updater
 from credentials import bot_token
 import cv2
-
 import numpy as np
-
 import requests
-import json
+
 
 TOKEN = bot_token
 URL = 'http://localhost:5000/api/test'
@@ -26,6 +23,7 @@ print('initializing completed')
 
 
 def process_image(image_bytes):
+    print('process_image')
     image = np.asarray(bytearray(image_bytes), dtype="uint8")
     image = cv2.imdecode(image, cv2.IMREAD_COLOR)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -33,6 +31,7 @@ def process_image(image_bytes):
 
 
 def transform_pil_image_to_bytes(image):
+    print('transform_pil_image_to_bytes')
     image = Image.fromarray(image)
     buffer = io.BytesIO()
     image.save(buffer, 'PNG')
@@ -58,6 +57,7 @@ def start(bot, update):
 
 
 def draw_contours(image_array, metadata):
+    print('draw_contours')
     for bbox in metadata['bbox']:
             cv2.rectangle(image_array, (bbox['bbox']['x1'], bbox['bbox']['y1']),\
                                         (bbox['bbox']['x2'], bbox['bbox']['y2']),\
@@ -69,7 +69,7 @@ def bot_image_processing(bot, update):
 
     image_array = process_image(image_bytes)
     _, img_encoded = cv2.imencode('.jpg', image_array)
-
+    print('bot_image_processing')
     response = requests.post(URL, data=img_encoded.tostring(), headers=headers)
     metadata = response.json()['image']
 

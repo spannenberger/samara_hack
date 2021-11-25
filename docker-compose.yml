@@ -1,24 +1,38 @@
 version: '2.3'
 
 services:
-  cv:
-    image: cv
-    # runtime: nvidia
-    # pid: "host"
-    # env_file:
-    #   - .env
+  app:
+    image: application
+    runtime: nvidia
+    pid: "host"
     ports:
-      - 5000:5000
-      - 6006:6006
+      - 5010:5000
     stdin_open: true
     tty: true
     volumes:
-      - .:/workspace/cv
+      - .:/workspace/app
     build:
       context: .
       network: host
       dockerfile: ./Dockerfile
-      
+    # command: waitress-serve --port=5010 backend:app
+
+  bot:
+    image: bot
+    runtime: nvidia
+    pid: "host"
+    ports:
+      - 5011:5000
+    stdin_open: true
+    tty: true
+    volumes:
+      - .:/workspace/bot
+    build:
+      context: .
+      network: host
+      dockerfile: ./Dockerfile
+    # command: python telebot/bot.py
 
 volumes:
   cv:
+  bot:
