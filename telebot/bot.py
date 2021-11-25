@@ -57,18 +57,24 @@ def start(bot, update):
     bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
+def draw_contours(image_array, metadata):
+    for bbox in metadata['bbox']:
+            cv2.rectangle(image_array, (bbox['bbox']['x1'], bbox['bbox']['y1']),\
+                                        (bbox['bbox']['x2'], bbox['bbox']['y2']),\
+                                        (255, 0, 0), 1)
+
+
 def bot_image_processing(bot, update):
     image_bytes, file_id = get_image_bytes(bot, update)
 
     image_array = process_image(image_bytes)
     _, img_encoded = cv2.imencode('.jpg', image_array)
+
     response = requests.post(URL, data=img_encoded.tostring(), headers=headers)
     metadata = response.json()['image']
-    for bbox in metadata['bbox']:
-        cv2.rectangle(image_array, (bbox['bbox']['x1'], bbox['bbox']['y1']),\
-                      (bbox['bbox']['x2'], bbox['bbox']['y2']), (255, 0, 0), 3)
-    image = transform_pil_image_to_bytes(image_array)
 
+    draw_contours(image_array, metadata)
+    image = transform_pil_image_to_bytes(image_array)
 
     bot.send_photo(chat_id=update.message.chat_id, photo=image)
     bot.send_message(chat_id=update.message.chat_id, text=metadata,
