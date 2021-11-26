@@ -55,9 +55,21 @@ def start(bot, update):
 
 def draw_contours(image_array, metadata):
     for bbox in metadata['bbox']:
-            cv2.rectangle(image_array, (bbox['bbox']['x1'], bbox['bbox']['y1']),\
-                                        (bbox['bbox']['x2'], bbox['bbox']['y2']),\
-                                        (255, 0, 0), 1)
+        threshold = bbox['threshold']
+        topLeftCorner = (bbox['bbox']['x1'], bbox['bbox']['y1'])
+        botRightCorner = (bbox['bbox']['x2'], bbox['bbox']['y2'])
+        cv2.rectangle(image_array,\
+                         topLeftCorner,\
+                         botRightCorner,\
+                         (255, 0, 0), 1)
+
+        cv2.putText(image_array, f'Tiger {threshold}',
+                        topLeftCorner,
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (255, 0, 0),
+                        2,
+                        2)
 
 
 def bot_image_processing(bot, update):
