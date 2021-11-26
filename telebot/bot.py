@@ -11,7 +11,7 @@ import requests
 
 
 TOKEN = bot_token
-URL = 'http://10.10.66.129:5010/api/test'
+URL = 'http://10.10.67.145:5010/api/test'
 
 content_type = 'image/jpeg'
 headers = {'content-type': content_type}
@@ -54,11 +54,30 @@ def start(bot, update):
 
 
 def draw_contours(image_array, metadata):
+    tigers_count = 0
+    leos_count = 0
     for bbox in metadata['bbox']:
-            cv2.rectangle(image_array, (bbox['bbox']['x1'], bbox['bbox']['y1']),\
-                                        (bbox['bbox']['x2'], bbox['bbox']['y2']),\
-                                        (255, 0, 0), 1)
+        class_name = 'Leopard' if bbox['bbox_id'] == 1 else 'Tiger'
+        if bbox['bbox_id'] == 1:
+            leos_count += 1
+        else:
+            tigers_count += 1
+        threshold = bbox['threshold']
+        topLeftCorner = (bbox['bbox']['x1'], bbox['bbox']['y1'])
+        botRightCorner = (bbox['bbox']['x2'], bbox['bbox']['y2'])
+        cv2.rectangle(image_array,\
+                         topLeftCorner,\
+                         botRightCorner,\
+                         (255, 0, 0), 1)
 
+        cv2.putText(image_array, f'{class_name} - {threshold}',
+                        topLeftCorner,
+                        cv2.FONT_HERSHEY_SIMPLEX,
+                        0.5,
+                        (255, 0, 0),
+                        2,
+                        2)
+    return leos_count, tigers_count
 
 def bot_image_processing(bot, update):
     image_bytes, file_id = get_image_bytes(bot, update)
@@ -70,11 +89,13 @@ def bot_image_processing(bot, update):
     response = requests.post(URL, data=data, headers=headers)
 
     metadata = response.json()['image']
+    detected_date = response.json()['date']
 
-    draw_contours(image_array, metadata)
+    leos_count, tigers_count = draw_contours(image_array, metadata)
     image = transform_pil_image_to_bytes(image_array)
+    print('vse ok')
     bot.send_photo(chat_id=update.message.chat_id, photo=image)
-    bot.send_message(chat_id=update.message.chat_id, text=metadata,
+    bot.send_message(chat_id=update.message.chat_id, text=f"На фото обнаружено {leos_count} леопарда(ов)🐆, \n{tigers_count} тигра(ов)🐯. \nВремя и дата обнаружения: {detected_date}",
                      reply_to_message_id=update.message.message_id,
                      parse_mode=telegram.ParseMode.HTML)
 

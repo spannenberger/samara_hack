@@ -19,5 +19,10 @@ RUN pip install mmdet==2.17.0
 COPY requirements.txt /workspace/requirements.txt
 RUN pip install -r /workspace/requirements.txt -U
 
+RUN apt-get update
+RUN apt-get install tesseract-ocr -y
+RUN apt-get install libtesseract-dev -y
+
+
 ENV FORCE_CUDA="1"
 # RUN pip install waitress
