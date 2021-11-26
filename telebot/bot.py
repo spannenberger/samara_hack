@@ -11,7 +11,7 @@ import requests
 
 
 TOKEN = bot_token
-URL = 'http://10.10.66.129:5010/api/test'
+URL = 'http://10.10.67.36:5010/api/test'
 
 content_type = 'image/jpeg'
 headers = {'content-type': content_type}
@@ -80,12 +80,14 @@ def bot_image_processing(bot, update):
 
     data = img_encoded.tostring()
     response = requests.post(URL, data=data, headers=headers)
-
+    print("bot_image_processing")
     metadata = response.json()['image']
 
     draw_contours(image_array, metadata)
     image = transform_pil_image_to_bytes(image_array)
+    print("1")
     bot.send_photo(chat_id=update.message.chat_id, photo=image)
+    print("2")
     bot.send_message(chat_id=update.message.chat_id, text=metadata,
                      reply_to_message_id=update.message.message_id,
                      parse_mode=telegram.ParseMode.HTML)

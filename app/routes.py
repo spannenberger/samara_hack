@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from app import app
 from .model import load_model, get_prediction
+# from .prototype_runner import push_data_to_db
 
 model = load_model()
 # route http posts to this method
@@ -25,8 +26,11 @@ def test():
         
         if bbox[-1] > 0.25:
             all_bboxes.append({'bbox_id':i, 'bbox':{'x1':int(bbox[0]), 'y1':int(bbox[1]),\
-                                                    'x2':int(bbox[2]), 'y2':int(bbox[3])}})
-    
+                                                    'x2':int(bbox[2]), 'y2':int(bbox[3])},\
+                                'threshold': int(bbox[-1]*100)})
+
+    # push_data_to_db(r.data, class='tiger', timestamp=time.today())
+
     response = {'message' : 'image received. size={}x{}'.format(img.shape[1], img.shape[0]),
                 'image' : {'bbox':all_bboxes}
                 }
