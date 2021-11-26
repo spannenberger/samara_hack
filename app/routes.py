@@ -22,11 +22,11 @@ def test():
 
     all_bboxes = []
     for i, bbox in enumerate(result):
-        bbox = bbox.reshape(-1)
+        
         if bbox[-1] > 0.25:
             all_bboxes.append({'bbox_id':i, 'bbox':{'x1':int(bbox[0]), 'y1':int(bbox[1]),\
                                                     'x2':int(bbox[2]), 'y2':int(bbox[3])}})
-
+    
     response = {'message' : 'image received. size={}x{}'.format(img.shape[1], img.shape[0]),
                 'image' : {'bbox':all_bboxes}
                 }
