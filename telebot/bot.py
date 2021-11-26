@@ -11,7 +11,7 @@ import requests
 
 
 TOKEN = bot_token
-URL = 'http://localhost:5000/api/test'
+URL = 'http://10.10.66.129:5010/api/test'
 
 content_type = 'image/jpeg'
 headers = {'content-type': content_type}
@@ -23,7 +23,6 @@ print('initializing completed')
 
 
 def process_image(image_bytes):
-    print('process_image')
     image = np.asarray(bytearray(image_bytes), dtype="uint8")
     image = cv2.imdecode(image, cv2.IMREAD_COLOR)
     image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -31,7 +30,6 @@ def process_image(image_bytes):
 
 
 def transform_pil_image_to_bytes(image):
-    print('transform_pil_image_to_bytes')
     image = Image.fromarray(image)
     buffer = io.BytesIO()
     image.save(buffer, 'PNG')
@@ -40,7 +38,6 @@ def transform_pil_image_to_bytes(image):
 
 
 def get_image_bytes(bot, update):
-    print(bot)
     if not update.message.photo:
         file_id = update.message.document['file_id']
     else:
@@ -57,7 +54,6 @@ def start(bot, update):
 
 
 def draw_contours(image_array, metadata):
-    print('draw_contours')
     for bbox in metadata['bbox']:
             cv2.rectangle(image_array, (bbox['bbox']['x1'], bbox['bbox']['y1']),\
                                         (bbox['bbox']['x2'], bbox['bbox']['y2']),\
@@ -69,13 +65,14 @@ def bot_image_processing(bot, update):
 
     image_array = process_image(image_bytes)
     _, img_encoded = cv2.imencode('.jpg', image_array)
-    print('bot_image_processing')
-    response = requests.post(URL, data=img_encoded.tostring(), headers=headers)
+
+    data = img_encoded.tostring()
+    response = requests.post(URL, data=data, headers=headers)
+
     metadata = response.json()['image']
 
     draw_contours(image_array, metadata)
     image = transform_pil_image_to_bytes(image_array)
-
     bot.send_photo(chat_id=update.message.chat_id, photo=image)
     bot.send_message(chat_id=update.message.chat_id, text=metadata,
                      reply_to_message_id=update.message.message_id,

@@ -4,7 +4,7 @@ import cv2
 from app import app
 from .model import load_model, get_prediction
 
-model = load_model
+model = load_model()
 # route http posts to this method
 @app.route('/')
 @app.route('/index')
@@ -22,6 +22,7 @@ def test():
 
     all_bboxes = []
     for i, bbox in enumerate(result):
+        bbox = bbox.reshape(-1)
         if bbox[-1] > 0.25:
             all_bboxes.append({'bbox_id':i, 'bbox':{'x1':int(bbox[0]), 'y1':int(bbox[1]),\
                                                     'x2':int(bbox[2]), 'y2':int(bbox[3])}})

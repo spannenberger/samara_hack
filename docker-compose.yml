@@ -2,7 +2,7 @@ version: '2.3'
 
 services:
   app:
-    image: application
+    image: app
     runtime: nvidia
     pid: "host"
     ports:
@@ -10,12 +10,12 @@ services:
     stdin_open: true
     tty: true
     volumes:
-      - .:/workspace/app
+      - .:/workspace
     build:
       context: .
       network: host
       dockerfile: ./Dockerfile
-    # command: waitress-serve --port=5010 backend:app
+    command: waitress-serve --port=5000 backend:app
 
   bot:
     image: bot
@@ -31,8 +31,8 @@ services:
       context: .
       network: host
       dockerfile: ./Dockerfile
-    # command: python telebot/bot.py
+    command: python ./bot/telebot/bot.py
 
 volumes:
-  cv:
+  app:
   bot:
