@@ -6,6 +6,14 @@ from .model import load_model, get_prediction
 import pytesseract
 from datetime import datetime
 import datefinder
+import re
+
+import torch
+import random
+
+torch.manual_seed(0)
+random.seed(0)
+np.random.seed(0)
 
 custom_tesseract_config = '--oem 3 --psm 6 outputbase digits'
 
@@ -14,22 +22,48 @@ def get_grayscale(image):
     return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 
 
+def remove_noise(image):
+    return cv2.medianBlur(image, 5)
+
+
+# thresholding
+def thresholding(image):
+    return cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
+
+
 def get_time_from_pytesseract(image_array):
     gray = get_grayscale(image_array)
-    gray_bot_right = gray[gray.shape[0] - 100:gray.shape[0], gray.shape[1] - 650:gray.shape[1]]
-    gray_top_left = gray[0:30, 0:700]
+    # gray = remove_noise(gray)
+    # gray = thresholding(gray)
 
-    print('pytesseract with gray_bot_right')
-    times_string = pytesseract.image_to_string(gray_bot_right, config=custom_tesseract_config)
-    print('pytesseract with gray_top_left')
-    print(pytesseract.image_to_string(gray_top_left, config=custom_tesseract_config))
-    times_string += pytesseract.image_to_string(gray_top_left, config=custom_tesseract_config)
+    gray_bot = gray[gray.shape[0] - 60:gray.shape[0], 0:gray.shape[1]]
+    gray_top = gray[0:30, 0:gray.shape[1]]
 
-    matches = datefinder.find_dates(times_string)
-    for match in matches:
-        detected_date = match
-        break
-    return detected_date
+
+    times_string_bot_image = pytesseract.image_to_string(gray_bot, config=custom_tesseract_config)
+    print(times_string_bot_image)
+    match_time = re.search(r'\d\d:\d\d:\d\d', times_string_bot_image)
+    if not match_time:
+        match_time = re.search(r'\d\d: \d\d: \d\d', times_string_bot_image)
+    match_date = re.search(r'\d\d/\d\d/\d\d', times_string_bot_image)
+    if not match_date:
+        match_date = re.search(r'\d\d-\d\d-\d\d', times_string_bot_image)
+
+    if (not match_time) or (not match_date):
+        pass
+    else:
+        return match_date.group() + " " + match_time.group()
+
+    times_string_top_image = pytesseract.image_to_string(gray_top, config=custom_tesseract_config)
+    print(times_string_top_image)
+    match_time = re.search(r'\d\d:\d\d:\d\d', times_string_top_image)
+    if not match_time:
+        match_time = re.search(r'\d\d: \d\d: \d\d', times_string_top_image)
+    match_date = re.search(r'\d\d/\d\d/\d\d', times_string_top_image)
+    if not match_date:
+        match_date = re.search(r'\d\d-\d\d-\d\d', times_string_top_image)
+
+    return match_date.group() + " " + match_time.group()
 
 
 def get_image_from_tg_bot(request_from_bot):
