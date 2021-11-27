@@ -1,11 +1,8 @@
+from .model import load_detection_model, get_detection_prediction, load_metric_model, get_metric_prediction
 from flask import request, render_template
 import numpy as np
 import cv2
 from app import app
-from .model import load_detection_model, get_detection_prediction, load_metric_model, get_metric_prediction
-import pytesseract
-from datetime import datetime
-import datefinder
 import re
 import torch
 import random
@@ -28,6 +25,11 @@ metric_model, feature_extractor, device, base = load_metric_model() # выгру
 @app.route('/')
 @app.route('/index')
 def index():
+    """Рендеринг html страницы
+
+    Показательная страница, показывающая возможность простого расширения и внедрения сервиса
+    """
+
     return render_template('index.html')
 
 @app.route('/api/test', methods=['POST'])
@@ -60,6 +62,7 @@ def test():
                 botRightCorner,\
                 (255, 0, 0), 1)
 
+            # получаем предикт с metric learning модели
             metric_result = get_metric_prediction(metric_model, feature_extractor, device, base, cutted_img)
 
             classes_dict = {0: 'leopard', 1: 'princess', 2: 'tigers', 3: 'other animal'}
@@ -68,8 +71,7 @@ def test():
             print(metric_result)
 
     response = {'message' : 'image received. size={}x{}'.format(img.shape[1], img.shape[0]),
-                'image' : {'bbox':all_bboxes},
-                # 'date':detected_date
+                'image' : {'bbox':all_bboxes}
                 }
 
     return response
