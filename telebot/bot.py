@@ -66,15 +66,21 @@ def draw_contours(image_array, metadata):
 
     tigers_count = 0
     leos_count = 0
+    princess_count = 0
+    princess = False
 
     for bbox in metadata['bbox']:
         class_name = 'Leopard' if bbox['bbox_id'] == 1 else 'Tiger'
 
-        if bbox['bbox_id'] == 1:
-            leos_count += 1
+        if bbox['bbox_id'] == 0:
+            tigers_count += 1
+            princess = bbox['is_princess']
+            if princess:
+                princess_count += 1
+                class_name = 'Princess'
 
         else:
-            tigers_count += 1
+            leos_count += 1
 
         threshold = bbox['threshold']
 
@@ -94,7 +100,7 @@ def draw_contours(image_array, metadata):
                         2,
                         2)
 
-    return leos_count, tigers_count
+    return leos_count, tigers_count, princess_count
 
 def bot_image_processing(bot, update):
     """Функция обработка запроса с изображением
@@ -112,24 +118,22 @@ def bot_image_processing(bot, update):
     response = requests.post(URL, data=data, headers=headers)
 
     metadata = response.json()['image']
-    is_princess = response.json()['is_princess']
     # detected_date = response.json()['date']
 
-    leos_count, tigers_count = draw_contours(image_array, metadata)
+    leos_count, tigers_count, princess_count = draw_contours(image_array, metadata)
     image = transform_pil_image_to_bytes(image_array)
 
     print('vse ok')
-
-    bot.send_photo(chat_id=update.message.chat_id, photo=image)
-
-    if is_princess == True:
-        bot.send_message(chat_id=update.message.chat_id, text=f"На фото обнаружено {leos_count} леопарда(ов)🐆, \n{tigers_count} тигра(ов)🐯.\n Также мы определили, что это наша принцесска👸👑",
-                        reply_to_message_id=update.message.message_id,
-                        parse_mode=telegram.ParseMode.HTML)
+    if princess_count > 0:
+        text = f"На фото обнаружено {leos_count} леопарда(ов)🐆, \n{tigers_count} тигра(ов)🐯. \n Также на фото была обнаружена принцесска 👸 👑."
     else:
-        bot.send_message(chat_id=update.message.chat_id, text=f"На фото обнаружено {leos_count} леопарда(ов)🐆, \n{tigers_count} тигра(ов)🐯.",
-                        reply_to_message_id=update.message.message_id,
-                        parse_mode=telegram.ParseMode.HTML)
+        text = f"На фото обнаружено {leos_count} леопарда(ов)🐆, \n{tigers_count} тигра(ов)🐯. \n Принцессы обнаружено не было..."
+    bot.send_photo(chat_id=update.message.chat_id, photo=image)
+    bot.send_message(chat_id=update.message.chat_id, text=text,
+                    reply_to_message_id=update.message.message_id,
+                    parse_mode=telegram.ParseMode.HTML)
+
+
 
 
 

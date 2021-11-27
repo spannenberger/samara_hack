@@ -50,29 +50,28 @@ def test():
                 all_bboxes.append({'bbox_id':i, 'bbox':{'x1':int(bbox[0]), 'y1':int(bbox[1]),\
                                                         'x2':int(bbox[2]), 'y2':int(bbox[3])},\
                                    'threshold':int(bbox[-1]*100)})
+        for bbox in all_bboxes:
+            topLeftCorner = (bbox['bbox']['x1'], bbox['bbox']['y1'])
+            botRightCorner = (bbox['bbox']['x2'], bbox['bbox']['y2'])
 
-                topLeftCorner = (all_bboxes[0]['bbox']['x1'], all_bboxes[0]['bbox']['y1'])
-                botRightCorner = (all_bboxes[0]['bbox']['x2'], all_bboxes[0]['bbox']['y2'])
-                
-                # обрезаем фотографию по bbox
-                cutted_img = cv2.rectangle(img,\
-                    topLeftCorner,\
-                    botRightCorner,\
-                    (255, 0, 0), 1)
+            # обрезаем фотографию по bbox
+            cutted_img = cv2.rectangle(img,\
+                topLeftCorner,\
+                botRightCorner,\
+                (255, 0, 0), 1)
 
-                metric_result = get_metric_prediction(metric_model, feature_extractor, device, base, cutted_img)
-                print(metric_result)
+            metric_result = get_metric_prediction(metric_model, feature_extractor, device, base, cutted_img)
 
-    if metric_result < 0.1: # подобранный threshold для уверенности в том, что мы нашли именно принцессу  
-        response = {'message' : 'image received. size={}x{}'.format(img.shape[1], img.shape[0]),
-                    'image' : {'bbox':all_bboxes},
-                    'is_princess': True
-                    # 'date':detected_date
-                    }
-    else:
-        response = {'message' : 'image received. size={}x{}'.format(img.shape[1], img.shape[0]),
-                    'image' : {'bbox':all_bboxes},
-                    'is_princess': False
-                    # 'date':detected_date
-                    }
+            if metric_result < 0.1:
+                is_princess = True
+            else:
+                is_princess = False
+            bbox.update({'is_princess': is_princess})
+            print(metric_result)
+
+    response = {'message' : 'image received. size={}x{}'.format(img.shape[1], img.shape[0]),
+                'image' : {'bbox':all_bboxes},
+                # 'date':detected_date
+                }
+
     return response
