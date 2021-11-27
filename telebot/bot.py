@@ -70,17 +70,18 @@ def draw_contours(image_array, metadata):
     princess = False
 
     for bbox in metadata['bbox']:
-        class_name = 'Leopard' if bbox['bbox_id'] == 1 else 'Tiger'
+        # class_name = 'Leopard' if bbox['bbox_id'] == 1 else 'Tiger'
+        class_name = bbox['class_name']
 
-        if bbox['bbox_id'] == 0:
-            tigers_count += 1
-            princess = bbox['is_princess']
-            if princess:
-                princess_count += 1
-                class_name = 'Princess'
+        # if bbox['bbox_id'] == 0:
+        #     tigers_count += 1
+        #     princess = bbox['is_princess']
+        #     if princess:
+        #         princess_count += 1
+        #         class_name = 'Princess'
 
-        else:
-            leos_count += 1
+        # else:
+        #     leos_count += 1
 
         threshold = bbox['threshold']
 
@@ -129,9 +130,9 @@ def bot_image_processing(bot, update):
     else:
         text = f"На фото обнаружено {leos_count} леопарда(ов)🐆, \n{tigers_count} тигра(ов)🐯. \n Принцессы обнаружено не было..."
     bot.send_photo(chat_id=update.message.chat_id, photo=image)
-    bot.send_message(chat_id=update.message.chat_id, text=text,
-                    reply_to_message_id=update.message.message_id,
-                    parse_mode=telegram.ParseMode.HTML)
+    # bot.send_message(chat_id=update.message.chat_id, text=text,
+    #                 reply_to_message_id=update.message.message_id,
+    #                 parse_mode=telegram.ParseMode.HTML)
 
 
 

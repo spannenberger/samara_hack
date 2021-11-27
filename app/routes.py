@@ -46,7 +46,7 @@ def test():
 
         for bbox in recognition:
             print(bbox[-1])
-            if bbox[-1] > 0.92: # подобранный threshold для точности детекции
+            if bbox[-1] > 0.8: # подобранный threshold для точности детекции
                 all_bboxes.append({'bbox_id':i, 'bbox':{'x1':int(bbox[0]), 'y1':int(bbox[1]),\
                                                         'x2':int(bbox[2]), 'y2':int(bbox[3])},\
                                    'threshold':int(bbox[-1]*100)})
@@ -62,11 +62,9 @@ def test():
 
             metric_result = get_metric_prediction(metric_model, feature_extractor, device, base, cutted_img)
 
-            if metric_result < 0.1:
-                is_princess = True
-            else:
-                is_princess = False
-            bbox.update({'is_princess': is_princess})
+            classes_dict = {0: 'leopard', 1: 'princess', 2: 'tigers', 3: 'other animal'}
+
+            bbox.update({'class_name': classes_dict[metric_result]})
             print(metric_result)
 
     response = {'message' : 'image received. size={}x{}'.format(img.shape[1], img.shape[0]),

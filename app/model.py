@@ -29,8 +29,8 @@ def load_metric_model():
     model = './trained_metric_transformer/' # путь до обученной модели
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu' # пока пусть так будет, нужно сделать не так явно
 
-    df = pd.read_csv("./base_embs.csv") # считываем csv со средними эмбеддингами для каждого класса
-    base = np.array(df['0'])
+    df = pd.read_csv("./full_base_file.csv") # считываем csv со средними эмбеддингами для каждого класса
+    base = df.values.T
 
     feature_extractor = ViTFeatureExtractor.from_pretrained(extractor)
     metric_model = ViTModel.from_pretrained(model)
@@ -52,7 +52,7 @@ def get_metric_prediction(
     (Далле по найденному threshold мы будем отсекать фотографии где нет принцессы)
     """
     
-    img = feature_extractor(img,return_tensors="pt")
+    img = feature_extractor(img, return_tensors="pt")
     img.to(device)
 
     model.eval()
@@ -60,9 +60,20 @@ def get_metric_prediction(
         prediction = model(**img).pooler_output
         prediction = prediction[0].cpu().detach().numpy()
 
-    dist = cosine(base, prediction) # считаем косинусное расстояние
+    dist = []
+    for emb in base:
+        dist.append(cosine(emb, prediction)) # считаем косинусное расстояние
 
-    return dist
+    class_idx = np.argmin(np.array(dist))
+
+    print(dist[class_idx])
+
+    if dist[class_idx] < 0.1:
+        correct_class = class_idx
+    else:
+        correct_class = 3
+
+    return correct_class
 
 
 def get_detection_prediction(model, img):
