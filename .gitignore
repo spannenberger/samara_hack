@@ -133,3 +133,5 @@ detection_model/
 *.csv
 .idea/
 trained_metric_transformer/
+*.mp4
+photosfrom_video/

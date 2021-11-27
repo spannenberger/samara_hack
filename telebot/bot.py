@@ -8,7 +8,9 @@ from credentials import bot_token
 import cv2
 import numpy as np
 import requests
-
+import os 
+import glob
+from telegram import InputMediaPhoto
 
 TOKEN = bot_token
 URL = 'http://10.10.67.145:5010/api/test'
@@ -20,6 +22,19 @@ updater = Updater(token=TOKEN)
 dispatcher = updater.dispatcher
 
 print('initializing completed')
+
+
+def start(bot, update):
+    """Стартовая команда для бота"""
+
+    text = 'Привет, я бот распознающий животных в заповедниках, пришли мне фото и я отрисую всех животных, ' \
+           'а так же выведу виды этих животных \n'
+    bot.send_message(chat_id=update.message.chat_id, text=text)
+
+
+def cut_video(bot, update):
+    text = 'Также я могу сделать распознание по видеофрагменту\n'
+    bot.send_message(chat_id=update.message.chat_id, text=text)
 
 
 def process_image(image_bytes):
@@ -53,36 +68,30 @@ def get_image_bytes(bot, update):
     return image, file_id
 
 
-def start(bot, update):
-    """Стартовая команда для бота"""
-
-    text = 'Привет, я бот распознающий животных в заповедниках, пришли мне фото и я отрисую всех животных, ' \
-           'а так же выведу виды этих животных \n'
-    bot.send_message(chat_id=update.message.chat_id, text=text)
+def get_video(bot, update):
+    # import pdb;pdb.set_trace()
+    if not update.message.video:
+        file_id = update.message.document['file_id']
+    else:
+        file_id = update.message.video['file_id']
+    file = bot.getFile(file_id)
+    # 
+    file_path = file.file_path
+    return file_path
 
 
 def draw_contours(image_array, metadata):
     """Отрисовка контуров по bbox и подсчет кол-ва найденных особей"""
 
-    tigers_count = 0
-    leos_count = 0
-    princess_count = 0
-    princess = False
-
+    counter_dict = {'leopard': 0, 'tigers': 0, 'other animal': 0, 'is_princess': False}
     for bbox in metadata['bbox']:
-        # class_name = 'Leopard' if bbox['bbox_id'] == 1 else 'Tiger'
+        import pdb;pdb.set_trace()
         class_name = bbox['class_name']
-
-        # if bbox['bbox_id'] == 0:
-        #     tigers_count += 1
-        #     princess = bbox['is_princess']
-        #     if princess:
-        #         princess_count += 1
-        #         class_name = 'Princess'
-
-        # else:
-        #     leos_count += 1
-
+        if class_name == 'princess':
+            counter_dict['is_princess'] = True
+            counter_dict['tigers'] += 1
+        else:
+            counter_dict[class_name] += 1
         threshold = bbox['threshold']
 
         topLeftCorner = (bbox['bbox']['x1'], bbox['bbox']['y1'])
@@ -101,7 +110,56 @@ def draw_contours(image_array, metadata):
                         2,
                         2)
 
-    return leos_count, tigers_count, princess_count
+    return counter_dict
+
+def bot_video_preprocessing(bot, update):
+    text = 'Начинаю обработку видеофрагмента\n'
+    bot.send_message(chat_id=update.message.chat_id, text=text)
+
+    file_path = get_video(bot, update)
+
+    cap = cv2.VideoCapture(file_path)
+    photo_count = 0
+    os.makedirs('/workspace/bot/photosfrom_video', exist_ok=True)
+    text = 'Считал ваше видео, начинаю поиск полезных кадров\n'
+    bot.send_message(chat_id=update.message.chat_id, text=text)
+    if not cap.isOpened():
+        print('Cannot to open video file')
+    count = 0
+    while cap.isOpened():
+
+        fl, img_frame = cap.read()
+        if img_frame is None:
+            break
+
+        photo_count += 1
+        image_array = cv2.cvtColor(img_frame, cv2.COLOR_BGR2RGB)
+
+        text = 'О.... Кажется, нашел один.... Еще секундочку\n'
+        bot.send_message(chat_id=update.message.chat_id, text=text)
+        _, img_encoded = cv2.imencode('.jpg', image_array)
+        data = img_encoded.tostring()
+
+        response = requests.post(URL, data=data, headers=headers)
+        metadata = response.json()['image']
+        leos_count, tigers_count, other_animal_count, is_princess = draw_contours(image_array, metadata).values()
+
+        cv2.imwrite(f'/workspace/bot/photosfrom_video/photo {photo_count}.jpg', cv2.cvtColor(image_array, cv2.COLOR_BGR2RGB))
+
+        count += 120 # 1 секунда = 30; 2 секунды = 60 и тд
+
+        cap.set(cv2.CAP_PROP_POS_FRAMES, count)
+
+    text = 'Обработку закончил, все в норме! Сейчас отправлю альбом фотографий)\n'
+    bot.send_message(chat_id=update.message.chat_id, text=text)
+
+    media_group = []
+    text = 'some caption for album'
+    for img in glob.glob("/workspace/bot/photosfrom_video/*.jpg"):
+        media_group.append(InputMediaPhoto(open(img, 'rb')))
+
+    bot.send_media_group(chat_id=update.message.chat_id, media = media_group)
+
 
 def bot_image_processing(bot, update):
     """Функция обработка запроса с изображением
@@ -120,28 +178,32 @@ def bot_image_processing(bot, update):
 
     metadata = response.json()['image']
     # detected_date = response.json()['date']
-
-    leos_count, tigers_count, princess_count = draw_contours(image_array, metadata)
+    # import pdb;pdb.set_trace()
+    leos_count, tigers_count, other_animal_count, is_princess = draw_contours(image_array, metadata).values()
     image = transform_pil_image_to_bytes(image_array)
 
     print('vse ok')
-    if princess_count > 0:
-        text = f"На фото обнаружено {leos_count} леопарда(ов)🐆, \n{tigers_count} тигра(ов)🐯. \n Также на фото была обнаружена принцесска 👸 👑."
+    if is_princess:
+        text = f"На фото обнаружили \nЛеопард🐆 - {leos_count} \nТигр🐯 - {tigers_count} \nДругие животные - {other_animal_count}🎁 \nТакже на фото была обнаружена принцесска 👸 👑."
     else:
-        text = f"На фото обнаружено {leos_count} леопарда(ов)🐆, \n{tigers_count} тигра(ов)🐯. \n Принцессы обнаружено не было..."
+        text = f"На фото обнаружили \nЛеопард🐆 - {leos_count} \nТигр🐯 - {tigers_count} \nДругие животные - {other_animal_count}🎁 \nПринцессы обнаружено не было..."
     bot.send_photo(chat_id=update.message.chat_id, photo=image)
-    # bot.send_message(chat_id=update.message.chat_id, text=text,
-    #                 reply_to_message_id=update.message.message_id,
-    #                 parse_mode=telegram.ParseMode.HTML)
+    bot.send_message(chat_id=update.message.chat_id, text=text,
+                    reply_to_message_id=update.message.message_id,
+                    parse_mode=telegram.ParseMode.HTML)
 
 
 
 
 
 start_handler = CommandHandler(['start', 'help'], start)
+cut_video_handler = CommandHandler(['cut_video'], cut_video)
+
 process_image_handler = MessageHandler(Filters.photo | Filters.document, bot_image_processing)
+process_video_handler =  MessageHandler(Filters.video, bot_video_preprocessing)
 
 dispatcher.add_handler(start_handler)
+dispatcher.add_handler(cut_video_handler)
 dispatcher.add_handler(process_image_handler)
-
+dispatcher.add_handler(process_video_handler)
 updater.start_polling()
