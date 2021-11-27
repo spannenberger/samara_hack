@@ -2,12 +2,11 @@ from flask import request, render_template
 import numpy as np
 import cv2
 from app import app
-from .model import load_model, get_prediction
+from .model import load_detection_model, get_detection_prediction, load_metric_model, get_metric_prediction
 import pytesseract
 from datetime import datetime
 import datefinder
 import re
-
 import torch
 import random
 
@@ -15,64 +14,17 @@ torch.manual_seed(0)
 random.seed(0)
 np.random.seed(0)
 
-custom_tesseract_config = '--oem 3 --psm 6 outputbase digits'
-
-
-def get_grayscale(image):
-    return cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-
-
-def remove_noise(image):
-    return cv2.medianBlur(image, 5)
-
-
-# thresholding
-def thresholding(image):
-    return cv2.threshold(image, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-
-
-def get_time_from_pytesseract(image_array):
-    gray = get_grayscale(image_array)
-    # gray = remove_noise(gray)
-    # gray = thresholding(gray)
-
-    gray_bot = gray[gray.shape[0] - 60:gray.shape[0], 0:gray.shape[1]]
-    gray_top = gray[0:30, 0:gray.shape[1]]
-
-
-    times_string_bot_image = pytesseract.image_to_string(gray_bot, config=custom_tesseract_config)
-    print(times_string_bot_image)
-    match_time = re.search(r'\d\d:\d\d:\d\d', times_string_bot_image)
-    if not match_time:
-        match_time = re.search(r'\d\d: \d\d: \d\d', times_string_bot_image)
-    match_date = re.search(r'\d\d/\d\d/\d\d', times_string_bot_image)
-    if not match_date:
-        match_date = re.search(r'\d\d-\d\d-\d\d', times_string_bot_image)
-
-    if (not match_time) or (not match_date):
-        pass
-    else:
-        return match_date.group() + " " + match_time.group()
-
-    times_string_top_image = pytesseract.image_to_string(gray_top, config=custom_tesseract_config)
-    print(times_string_top_image)
-    match_time = re.search(r'\d\d:\d\d:\d\d', times_string_top_image)
-    if not match_time:
-        match_time = re.search(r'\d\d: \d\d: \d\d', times_string_top_image)
-    match_date = re.search(r'\d\d/\d\d/\d\d', times_string_top_image)
-    if not match_date:
-        match_date = re.search(r'\d\d-\d\d-\d\d', times_string_top_image)
-
-    return match_date.group() + " " + match_time.group()
-
-
 def get_image_from_tg_bot(request_from_bot):
+    """Функция для обрабтки фотографии с тг запроса"""
+
     nparr = np.fromstring(request_from_bot.data, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
     return img
 
 
-model = load_model()
+detection_model = load_detection_model() # выгрузка детектора
+metric_model, feature_extractor, device, base = load_metric_model() # выгрузка metric learning модели
+
 @app.route('/')
 @app.route('/index')
 def index():
@@ -82,24 +34,45 @@ def index():
 def test():
 
     img = get_image_from_tg_bot(request)
-    detected_date = get_time_from_pytesseract(img)
 
-    result = get_prediction(model, img)
+    detection_result = get_detection_prediction(detection_model, img) # получение результатов детекции
     print('detecting is done')
 
     all_bboxes = []
-    for i, recognition in enumerate(result):
-        if recognition.shape[0] == 0:
+    for i, recognition in enumerate(detection_result):
+
+        if recognition.shape[0] == 0: # проверка результата детектора, если по [0] ничего, мы его пропускаем
             continue
+
         for bbox in recognition:
             print(bbox[-1])
-            if bbox[-1] > 0.92:
+            if bbox[-1] > 0.92: # подобранный threshold для точности детекции
                 all_bboxes.append({'bbox_id':i, 'bbox':{'x1':int(bbox[0]), 'y1':int(bbox[1]),\
                                                         'x2':int(bbox[2]), 'y2':int(bbox[3])},\
                                    'threshold':int(bbox[-1]*100)})
-    
-    response = {'message' : 'image received. size={}x{}'.format(img.shape[1], img.shape[0]),
-                'image' : {'bbox':all_bboxes},
-                'date':detected_date
-                }
+
+                topLeftCorner = (all_bboxes[0]['bbox']['x1'], all_bboxes[0]['bbox']['y1'])
+                botRightCorner = (all_bboxes[0]['bbox']['x2'], all_bboxes[0]['bbox']['y2'])
+                
+                # обрезаем фотографию по bbox
+                cutted_img = cv2.rectangle(img,\
+                    topLeftCorner,\
+                    botRightCorner,\
+                    (255, 0, 0), 1)
+
+                metric_result = get_metric_prediction(metric_model, feature_extractor, device, base, cutted_img)
+                print(metric_result)
+
+    if metric_result < 0.1: # подобранный threshold для уверенности в том, что мы нашли именно принцессу  
+        response = {'message' : 'image received. size={}x{}'.format(img.shape[1], img.shape[0]),
+                    'image' : {'bbox':all_bboxes},
+                    'is_princess': True
+                    # 'date':detected_date
+                    }
+    else:
+        response = {'message' : 'image received. size={}x{}'.format(img.shape[1], img.shape[0]),
+                    'image' : {'bbox':all_bboxes},
+                    'is_princess': False
+                    # 'date':detected_date
+                    }
     return response

@@ -130,3 +130,6 @@ dmypy.json
 atrw_anno_detection_train/
 detection_model/
 *.pth
+*.csv
+.idea/
+trained_metric_transformer/
