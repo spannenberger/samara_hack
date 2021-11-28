@@ -4,6 +4,7 @@ import requests
 import pandas as pd
 import tqdm
 
+# Для запуска на вашей машине нужно поменять URL на ваш локальный ip 
 URL = 'http://10.10.67.145:5010/api/test'
 
 content_type = 'image/jpeg'
@@ -37,7 +38,7 @@ def get_recognize_leotigers(path):
     df = pd.DataFrame()
     df['id'] = os.listdir(path)
     df['class'] = None
-    for idx, photo in enumerate(df['id'][:10]):
+    for idx, photo in enumerate(df['id']):
         if photo.endswith(".jpg"):
             image_array = cv2.imread(f'{path}/{photo}')
             _, img_encoded = cv2.imencode('.jpg', image_array)

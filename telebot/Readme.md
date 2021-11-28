@@ -6,3 +6,4 @@
     * Для запуска на вашей машине нужно поменять ```URL``` на ваш локальный ip 
 - [utils.py](/telebot/utils.py) - файл со вспомогательными функциями бота
 - [bot_commands.py](/telebot/bot_commands.py) - файл с командами бота
+- [credentials.py](credentials.py) - креды для поднятия бота

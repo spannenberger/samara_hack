@@ -1,4 +1,3 @@
-# import mmdet
 from mmcv import Config
 from mmdet.apis import init_detector, inference_detector
 from transformers import ViTFeatureExtractor, ViTModel
