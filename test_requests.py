@@ -60,5 +60,8 @@ def get_recognize_leotigers(path):
 
 
 if __name__=="__main__":
-    get_recognize_princess('./test_data/')
-    # get_recognize_leotigers(path)
+    #--------------------Параметры-для-изменения--------------------#
+    dataset_path = './test_data/'
+    #---------------------------------------------------------------#
+    get_recognize_princess(dataset_path)
+    # get_recognize_leotigers(dataset_path) # Раскомментировать и запустить повторно
