@@ -15,6 +15,7 @@ services:
       context: .
       network: host
       dockerfile: ./Dockerfile
+    command: sh install_models.sh
     command: waitress-serve --port=5000 backend:app # команда для поднятия сервиса с моделями
 
   bot:

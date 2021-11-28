@@ -18,6 +18,9 @@ RUN pip install mmdet==2.17.0
 
 COPY requirements.txt /workspace/requirements.txt
 RUN pip install -r /workspace/requirements.txt -U
+WORKDIR /workspace
+RUN apt-get update -y
+RUN apt-get install unzip -y
 
 ENV FORCE_CUDA="1"
 # RUN pip install waitress
