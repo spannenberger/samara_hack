@@ -3,7 +3,6 @@ from flask import request, render_template
 import numpy as np
 import cv2
 from app import app
-import re
 import torch
 import random
 
@@ -12,7 +11,12 @@ random.seed(0)
 np.random.seed(0)
 
 def get_image_from_tg_bot(request_from_bot):
-    """Функция для обрабтки фотографии с тг запроса"""
+    """Функция для обрабтки фотографии с тг запроса
+    Args:
+        request_from_bot: bytearray - байтовое представление изображения
+    Return:
+        img: np.array - numpy массив-представление изображения
+    """
 
     nparr = np.fromstring(request_from_bot.data, np.uint8)
     img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)

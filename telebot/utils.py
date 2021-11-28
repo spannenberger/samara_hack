@@ -24,9 +24,9 @@ def transform_pil_image_to_bytes(image):
 
     @TODO DOCS
     Args:
-        image: type - представление фотографии
+        image: np.array - представление фотографии
     Return:
-        buffer: type - сохраненная фотография
+        buffer: bytes - сохраненная фотография
     """
 
     image = Image.fromarray(image)
@@ -83,7 +83,7 @@ def draw_contours(image_array, metadata):
 
     Args:
         image_array: arr - массив-представление изображения
-        metadata: - словарь, содержащий ответ работы моделей
+        metadata: json - словарь, содержащий ответ работы моделей
 
     Return:
         counter_dict: dict - словарь с кол-вом определенных животных

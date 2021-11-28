@@ -130,8 +130,9 @@ dmypy.json
 atrw_anno_detection_train/
 detection_model/
 *.pth
-*.csv
 .idea/
 trained_metric_transformer/
 *.mp4
 photosfrom_video/
+Принцесса_400/
+test_data/
